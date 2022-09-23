@@ -18,6 +18,9 @@ func (fs *filesystem) StatFS(
 	ctx context.Context,
 	op *fuseops.StatFSOp) error {
 
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Printf("StatFS")
 
 	// Simulate a large amount of free space so that the Finder doesn't refuse to
@@ -40,6 +43,9 @@ func (fs *filesystem) StatFS(
 }
 
 func (fs *filesystem) LookUpInode(ctx context.Context, op *fuseops.LookUpInodeOp) error {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Printf("LookUpInode[Parent: %v, Name: %s", op.Parent, op.Name)
 	in, ok := fs.inodes[op.Parent]
 	if !ok {
@@ -65,6 +71,9 @@ func (fs *filesystem) LookUpInode(ctx context.Context, op *fuseops.LookUpInodeOp
 }
 
 func (fs *filesystem) GetInodeAttributes(ctx context.Context, op *fuseops.GetInodeAttributesOp) error {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Printf("GetInodeAttributes[InodeID: %v]", op.Inode)
 	in, ok := fs.inodes[op.Inode]
 	if !ok {
@@ -78,6 +87,9 @@ func (fs *filesystem) GetInodeAttributes(ctx context.Context, op *fuseops.GetIno
 }
 
 func (fs *filesystem) SetInodeAttributes(ctx context.Context, op *fuseops.SetInodeAttributesOp) error {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Printf("SetInodeAttributes[Inode: %v]", op.Inode)
 
 	in, ok := fs.inodes[op.Inode]
@@ -107,16 +119,25 @@ func (fs *filesystem) SetInodeAttributes(ctx context.Context, op *fuseops.SetIno
 }
 
 func (fs *filesystem) ForgetInode(ctx context.Context, op *fuseops.ForgetInodeOp) error {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Printf("ForgetInode[InodeID: %v, N: %v]", op.Inode, op.N)
 	return nil // TODO: implement this
 }
 
 func (fs *filesystem) BatchForget(context.Context, *fuseops.BatchForgetOp) error {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Println("BatchForget")
 	return fuse.ENOSYS
 }
 
 func (fs *filesystem) MkDir(ctx context.Context, op *fuseops.MkDirOp) error {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Printf("MkDir[Parent: %v, Name: %v, Mode: %v]", op.Parent, op.Name, op.Mode)
 
 	in, ok := fs.inodes[op.Parent]
@@ -159,11 +180,17 @@ func (fs *filesystem) MkDir(ctx context.Context, op *fuseops.MkDirOp) error {
 }
 
 func (fs *filesystem) MkNode(context.Context, *fuseops.MkNodeOp) error {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Println("MkNode")
 	return fuse.ENOSYS
 }
 
 func (fs *filesystem) CreateFile(ctx context.Context, op *fuseops.CreateFileOp) error {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Printf("CreateFile[Parent: %v, Name: %v]", op.Parent, op.Name)
 
 	in, ok := fs.inodes[op.Parent]
@@ -216,26 +243,41 @@ func (fs *filesystem) CreateFile(ctx context.Context, op *fuseops.CreateFileOp) 
 }
 
 func (fs *filesystem) CreateLink(context.Context, *fuseops.CreateLinkOp) error {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Println("CreateLink")
 	return fuse.ENOSYS
 }
 
 func (fs *filesystem) CreateSymlink(context.Context, *fuseops.CreateSymlinkOp) error {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Println("CreateSymlink")
 	return fuse.ENOSYS
 }
 
 func (fs *filesystem) Rename(context.Context, *fuseops.RenameOp) error {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Println("Rename")
 	return fuse.ENOSYS
 }
 
 func (fs *filesystem) RmDir(context.Context, *fuseops.RmDirOp) error {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Println("RmDir")
 	return fuse.ENOSYS
 }
 
 func (fs *filesystem) Unlink(ctx context.Context, op *fuseops.UnlinkOp) error {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Printf("Unlink[Parent: %v, Name: %v]", op.Parent, op.Name)
 	in, ok := fs.inodes[op.Parent]
 	if !ok {
@@ -262,6 +304,9 @@ func (fs *filesystem) Unlink(ctx context.Context, op *fuseops.UnlinkOp) error {
 
 // OpenDir ...
 func (fs *filesystem) OpenDir(ctx context.Context, op *fuseops.OpenDirOp) error {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Printf("OpenDir[InodeID: %v]", op.Inode)
 
 	node, ok := fs.inodes[op.Inode]
@@ -282,6 +327,9 @@ func (fs *filesystem) OpenDir(ctx context.Context, op *fuseops.OpenDirOp) error 
 
 // ReadDir ...
 func (fs *filesystem) ReadDir(ctx context.Context, op *fuseops.ReadDirOp) error {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Printf("ReadDir[InodeID: %v, HandleID: %v]", op.Inode, op.Handle)
 
 	_, ok := fs.inodes[op.Inode]
@@ -304,6 +352,9 @@ func (fs *filesystem) ReadDir(ctx context.Context, op *fuseops.ReadDirOp) error 
 
 // ReleaseDirHandle ...
 func (fs *filesystem) ReleaseDirHandle(ctx context.Context, op *fuseops.ReleaseDirHandleOp) error {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Printf("ReleaseDirHandle[HandleID: %v]", op.Handle)
 
 	if _, ok := fs.handles[op.Handle]; !ok {
@@ -319,6 +370,9 @@ func (fs *filesystem) ReleaseDirHandle(ctx context.Context, op *fuseops.ReleaseD
 
 // OpenFile ...
 func (fs *filesystem) OpenFile(ctx context.Context, op *fuseops.OpenFileOp) error {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Printf("OpenFile[Inode: %v, Handle: %v]", op.Inode, op.Handle)
 	in, ok := fs.inodes[op.Inode]
 	if !ok {
@@ -345,6 +399,9 @@ func (fs *filesystem) OpenFile(ctx context.Context, op *fuseops.OpenFileOp) erro
 
 // ReadFile ...
 func (fs *filesystem) ReadFile(ctx context.Context, op *fuseops.ReadFileOp) error {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Printf("ReadFile[InodeID: %v, HandleID: %v]", op.Inode, op.Handle)
 	_, ok := fs.inodes[op.Inode]
 	if !ok {
@@ -373,6 +430,9 @@ func (fs *filesystem) ReadFile(ctx context.Context, op *fuseops.ReadFileOp) erro
 
 // WriteFile ...
 func (fs *filesystem) WriteFile(ctx context.Context, op *fuseops.WriteFileOp) error {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Printf("WriteFile[InodeID: %v, HandleID: %v]", op.Inode, op.Handle)
 	_, ok := fs.inodes[op.Inode]
 	if !ok {
@@ -401,18 +461,27 @@ func (fs *filesystem) WriteFile(ctx context.Context, op *fuseops.WriteFileOp) er
 
 // SyncFile ...
 func (fs *filesystem) SyncFile(ctx context.Context, op *fuseops.SyncFileOp) error {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Printf("SyncFile[InodeID: %v, HandleID: %v]", op.Inode, op.Handle)
 	return nil // TODO implement proper
 }
 
 // FlushFile ...
 func (fs *filesystem) FlushFile(ctx context.Context, op *fuseops.FlushFileOp) error {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Printf("FlushFile[InodeID: %v, HandleID: %v]", op.Inode, op.Handle)
 	return nil // TODO implement proper
 }
 
 // ReleaseFileHandle ...
 func (fs *filesystem) ReleaseFileHandle(ctx context.Context, op *fuseops.ReleaseFileHandleOp) error {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Printf("ReleaseFileHandle[Handle: %v]", op.Handle)
 
 	h, ok := fs.handles[op.Handle]
@@ -437,23 +506,38 @@ func (fs *filesystem) ReleaseFileHandle(ctx context.Context, op *fuseops.Release
 // MISC OPS
 
 func (fs *filesystem) ReadSymlink(context.Context, *fuseops.ReadSymlinkOp) error {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Println("ReadSymlink")
 	return fuse.ENOSYS
 }
 
 func (fs *filesystem) RemoveXattr(context.Context, *fuseops.RemoveXattrOp) error {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Println("RemoveXattr")
 	return fuse.ENOSYS
 }
 func (fs *filesystem) GetXattr(context.Context, *fuseops.GetXattrOp) error {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Println("GetXattr")
 	return fuse.ENOSYS
 }
 func (fs *filesystem) ListXattr(context.Context, *fuseops.ListXattrOp) error {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Println("ListXattr")
 	return fuse.ENOSYS
 }
 func (fs *filesystem) SetXattr(context.Context, *fuseops.SetXattrOp) error {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Println("SetXattr")
 	return fuse.ENOSYS
 }
@@ -465,5 +549,8 @@ func (fs *filesystem) Fallocate(context.Context, *fuseops.FallocateOp) error {
 // decremented to zero, and clean up any resources associated with the file
 // system. No further calls to the file system will be made.
 func (fs *filesystem) Destroy() {
+	fs.Lock()
+	defer fs.Unlock()
+
 	log.Println("Destroy")
 }

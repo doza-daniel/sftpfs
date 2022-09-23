@@ -6,6 +6,7 @@ import (
 	"os"
 	"sshfs/handle"
 	"sshfs/inode"
+	"sync"
 	"time"
 
 	"github.com/jacobsa/fuse/fuseops"
@@ -26,6 +27,7 @@ func New(sftpClient *sftp.Client) fuseutil.FileSystem {
 	fs.uid = 1000
 	fs.gid = 1000
 	fs.sftpClient = sftpClient
+	fs.Mutex = &sync.Mutex{}
 
 	fs.init()
 
@@ -59,6 +61,8 @@ type filesystem struct {
 	gid uint32
 
 	sftpClient *sftp.Client
+
+	*sync.Mutex
 }
 
 // TODO error handling
