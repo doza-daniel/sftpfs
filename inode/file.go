@@ -3,6 +3,7 @@ package inode
 import (
 	"fmt"
 	"io"
+	"path"
 	"time"
 
 	"github.com/jacobsa/fuse/fuseops"
@@ -15,18 +16,18 @@ type FileInode interface {
 }
 
 type fileInode struct {
-	id    fuseops.InodeID
-	attrs *fuseops.InodeAttributes
-	name  string
+	id         fuseops.InodeID
+	attrs      *fuseops.InodeAttributes
+	remotePath string
 
 	content []byte
 }
 
-func NewFile(id fuseops.InodeID, attrs *fuseops.InodeAttributes, name string) Inode {
+func NewFile(id fuseops.InodeID, attrs *fuseops.InodeAttributes, remotePath string) Inode {
 	return &fileInode{
-		id:    id,
-		attrs: attrs,
-		name:  name,
+		id:         id,
+		attrs:      attrs,
+		remotePath: remotePath,
 	}
 }
 
@@ -39,7 +40,11 @@ func (f *fileInode) GetAttributes() *fuseops.InodeAttributes {
 }
 
 func (f *fileInode) Name() string {
-	return f.name
+	return path.Base(f.remotePath)
+}
+
+func (f *fileInode) RemotePath() string {
+	return f.remotePath
 }
 
 func (f *fileInode) ReadAt(p []byte, off int64) (int, error) {

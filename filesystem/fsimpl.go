@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"path"
 	"sshfs/handle"
 	"sshfs/inode"
 	"time"
@@ -167,7 +168,8 @@ func (fs *filesystem) MkDir(ctx context.Context, op *fuseops.MkDirOp) error {
 		Crtime: time.Now(),
 	}
 
-	dnode := inode.NewDir(fs.nextInodeID(), &attrs, op.Name)
+	remotePath := path.Join(parent.RemotePath(), op.Name)
+	dnode := inode.NewDir(fs.nextInodeID(), &attrs, remotePath, fs.sftpClient)
 	fs.inodes[dnode.InodeID()] = dnode
 	parent.AddEntry(dnode.Name(), dnode)
 
@@ -347,7 +349,11 @@ func (fs *filesystem) ReadDir(ctx context.Context, op *fuseops.ReadDirOp) error 
 		return fuse.EINVAL
 	}
 
-	return dirHandle.ReadDir(ctx, op)
+	if err := dirHandle.ReadDir(ctx, op); err != nil {
+		return fuse.EIO
+	}
+
+	return nil
 }
 
 // ReleaseDirHandle ...
@@ -384,7 +390,7 @@ func (fs *filesystem) OpenFile(ctx context.Context, op *fuseops.OpenFileOp) erro
 		return fuse.EIO
 	}
 
-	remotePath := "/home/mi13119/" + fnode.Name()
+	remotePath := fnode.Name()
 	f, err := fs.sftpClient.OpenFile(remotePath, os.O_RDWR)
 	if err != nil {
 		log.Printf("failed to open remote file '%v': %v", remotePath, err)

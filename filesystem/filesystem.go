@@ -1,8 +1,6 @@
 package filesystem
 
 import (
-	"fmt"
-	"log"
 	"os"
 	"sshfs/handle"
 	"sshfs/inode"
@@ -23,13 +21,12 @@ func New(sftpClient *sftp.Client) fuseutil.FileSystem {
 	fs.handles = make(map[fuseops.HandleID]handle.Handle)
 	fs.nextHandleID = handleIDGenerator(0)
 
-	fs.inodes[fuseops.RootInodeID] = fs.createRoot()
 	fs.uid = 1000
 	fs.gid = 1000
 	fs.sftpClient = sftpClient
 	fs.Mutex = &sync.Mutex{}
 
-	fs.init()
+	fs.createRoot()
 
 	return fs
 }
@@ -65,80 +62,7 @@ type filesystem struct {
 	*sync.Mutex
 }
 
-// TODO error handling
-func (fs *filesystem) init() {
-	wd, err := fs.sftpClient.Getwd()
-	if err != nil {
-		panic(fmt.Errorf("failed to read working dir: %v", err))
-	}
-
-	entries, err := fs.sftpClient.ReadDir(wd)
-	if err != nil {
-		panic(err)
-	}
-
-	root := fs.inodes[fuseops.RootInodeID].(inode.DirInode)
-	for _, entry := range entries {
-		log.Printf("%+v", entry.Sys())
-
-		in := fs.inodeFromRemoteDentry(entry)
-		fs.inodes[in.InodeID()] = in
-		root.AddEntry(entry.Name(), in)
-	}
-}
-
-func (fs *filesystem) inodeFromRemoteDentry(entry os.FileInfo) inode.Inode {
-	attrs := fuseops.InodeAttributes{
-		Size:  uint64(entry.Size()),
-		Nlink: 1,
-		Mode:  entry.Mode(),
-		Mtime: entry.ModTime(),
-	}
-
-	if entry.IsDir() {
-		return inode.NewDir(fs.nextInodeID(), &attrs, entry.Name())
-	}
-
-	return inode.NewFile(fs.nextInodeID(), &attrs, entry.Name())
-}
-
-func (fs *filesystem) freshInode(parent inode.DirInode, name string, mode os.FileMode, isDir bool) inode.Inode {
-	attrs := fs.freshAttributes(isDir, mode)
-
-	var in inode.Inode
-	if isDir {
-		in = inode.NewDir(fs.nextInodeID(), &attrs, name)
-	} else {
-		in = inode.NewFile(fs.nextInodeID(), &attrs, name)
-	}
-
-	parent.AddEntry(name, in)
-
-	return in
-}
-
-func (fs *filesystem) freshAttributes(isDir bool, mode os.FileMode) fuseops.InodeAttributes {
-	var size uint64 = 0
-	if isDir {
-		size = 4096
-		mode |= os.ModeDir
-	}
-
-	return fuseops.InodeAttributes{
-		Size:  size,
-		Nlink: 1,
-		Uid:   fs.uid,
-		Gid:   fs.gid,
-		Mode:  mode,
-
-		Atime:  time.Now(),
-		Ctime:  time.Now(),
-		Mtime:  time.Now(),
-		Crtime: time.Now(),
-	}
-}
-
-func (fs *filesystem) createRoot() inode.Inode {
+func (fs *filesystem) createRoot() {
 	attrs := fuseops.InodeAttributes{
 		Size:  4096,
 		Nlink: 2,
@@ -152,5 +76,12 @@ func (fs *filesystem) createRoot() inode.Inode {
 		Crtime: time.Now(),
 	}
 
-	return inode.NewDir(fuseops.RootInodeID, &attrs, "/")
+	remotePath, err := fs.sftpClient.Getwd()
+	if err != nil {
+		panic(err) // TODO
+	}
+
+	rootDir := inode.NewDir(fuseops.RootInodeID, &attrs, remotePath, fs.sftpClient)
+
+	fs.inodes[fuseops.RootInodeID] = rootDir
 }
