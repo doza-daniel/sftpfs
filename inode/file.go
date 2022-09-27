@@ -35,6 +35,10 @@ func (f *fileInode) InodeID() fuseops.InodeID {
 	return f.id
 }
 
+func (f *fileInode) SetInodeID(id fuseops.InodeID) {
+	f.id = id
+}
+
 func (f *fileInode) GetAttributes() *fuseops.InodeAttributes {
 	return f.attrs
 }

@@ -6,6 +6,7 @@ import (
 
 type Inode interface {
 	InodeID() fuseops.InodeID
+	SetInodeID(fuseops.InodeID)
 	Name() string
 	RemotePath() string
 	GetAttributes() *fuseops.InodeAttributes

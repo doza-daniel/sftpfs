@@ -63,6 +63,11 @@ func (fs *filesystem) LookUpInode(ctx context.Context, op *fuseops.LookUpInodeOp
 		return fuse.ENOENT
 	}
 
+	if child.InodeID() < fuseops.RootInodeID {
+		child.SetInodeID(fs.nextInodeID())
+		fs.inodes[child.InodeID()] = child
+	}
+
 	op.Entry = fuseops.ChildInodeEntry{
 		Child:      child.InodeID(),
 		Attributes: *child.GetAttributes(),

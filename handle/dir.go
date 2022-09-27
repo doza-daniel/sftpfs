@@ -7,7 +7,6 @@ import (
 	"github.com/jacobsa/fuse"
 	"github.com/jacobsa/fuse/fuseops"
 	"github.com/jacobsa/fuse/fuseutil"
-	"github.com/pkg/sftp"
 )
 
 type DirHandle interface {
@@ -26,7 +25,7 @@ func (dh *dirHandle) Inode() inode.Inode {
 	return dh.dirInode
 }
 
-func (dh *dirHandle) ReadDir(ctx context.Context, op *fuseops.ReadDirOp, sftpc *sftp.Client) error {
+func (dh *dirHandle) ReadDir(ctx context.Context, op *fuseops.ReadDirOp) error {
 	entries, err := dh.dirInode.GetEntries(ctx)
 	if err != nil {
 		return err

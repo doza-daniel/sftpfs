@@ -3,6 +3,7 @@ package inode
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"path"
 
@@ -49,6 +50,10 @@ func NewDir(
 
 func (dir *dirInode) InodeID() fuseops.InodeID {
 	return dir.id
+}
+
+func (dir *dirInode) SetInodeID(id fuseops.InodeID) {
+	dir.id = id
 }
 
 func (dir *dirInode) GetAttributes() *fuseops.InodeAttributes {
@@ -134,6 +139,8 @@ func (dir *dirInode) inodeFromRemoteDentry(entry os.FileInfo) Inode {
 		Mode:  entry.Mode(),
 		Mtime: entry.ModTime(),
 	}
+
+	log.Printf("mode: %+v", attrs.Mode)
 
 	remotePath := path.Join(dir.remotePath, entry.Name())
 
