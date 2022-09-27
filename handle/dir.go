@@ -2,7 +2,7 @@ package handle
 
 import (
 	"context"
-	"sshfs/inode"
+	"sftpfs/inode"
 
 	"github.com/jacobsa/fuse"
 	"github.com/jacobsa/fuse/fuseops"

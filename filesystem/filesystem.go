@@ -2,8 +2,8 @@ package filesystem
 
 import (
 	"os"
-	"sshfs/handle"
-	"sshfs/inode"
+	"sftpfs/handle"
+	"sftpfs/inode"
 	"sync"
 	"time"
 

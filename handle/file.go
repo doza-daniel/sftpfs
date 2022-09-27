@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"sshfs/inode"
+	"sftpfs/inode"
 
 	"github.com/jacobsa/fuse/fuseops"
 	"github.com/pkg/sftp"

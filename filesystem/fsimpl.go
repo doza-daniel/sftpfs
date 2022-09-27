@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 	"path"
-	"sshfs/handle"
-	"sshfs/inode"
+	"sftpfs/handle"
+	"sftpfs/inode"
 	"time"
 
 	"github.com/jacobsa/fuse"

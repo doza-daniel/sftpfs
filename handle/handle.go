@@ -1,6 +1,6 @@
 package handle
 
-import "sshfs/inode"
+import "sftpfs/inode"
 
 type Handle interface {
 	Inode() inode.Inode

@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"sshfs/filesystem"
+	"sftpfs/filesystem"
 	"strings"
 	"syscall"
 
