@@ -395,7 +395,7 @@ func (fs *filesystem) OpenFile(ctx context.Context, op *fuseops.OpenFileOp) erro
 		return fuse.EIO
 	}
 
-	remotePath := fnode.Name()
+	remotePath := fnode.RemotePath()
 	f, err := fs.sftpClient.OpenFile(remotePath, os.O_RDWR)
 	if err != nil {
 		log.Printf("failed to open remote file '%v': %v", remotePath, err)
