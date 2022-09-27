@@ -87,7 +87,7 @@ func (fs *filesystem) GetInodeAttributes(ctx context.Context, op *fuseops.GetIno
 	}
 
 	op.Attributes = *in.GetAttributes()
-	op.AttributesExpiration = time.Now().Add(5 * time.Second) // TODO: hardcoded for now
+	// op.AttributesExpiration = time.Now().Add(time.Second) // TODO: hardcoded for now
 
 	return nil
 }

@@ -3,7 +3,6 @@ package inode
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"path"
 
@@ -139,8 +138,6 @@ func (dir *dirInode) inodeFromRemoteDentry(entry os.FileInfo) Inode {
 		Mode:  entry.Mode(),
 		Mtime: entry.ModTime(),
 	}
-
-	log.Printf("mode: %+v", attrs.Mode)
 
 	remotePath := path.Join(dir.remotePath, entry.Name())
 

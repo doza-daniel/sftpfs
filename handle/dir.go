@@ -49,7 +49,7 @@ func (dh *dirHandle) ReadDir(ctx context.Context, op *fuseops.ReadDirOp) error {
 
 		dirents[i] = fuseutil.Dirent{
 			Type:   t,
-			Inode:  entry.InodeID(),
+			Inode:  fuseops.RootInodeID + 1,
 			Name:   entry.Name(),
 			Offset: fuseops.DirOffset(i) + 1,
 		}
