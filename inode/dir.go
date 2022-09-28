@@ -137,6 +137,9 @@ func (dir *dirInode) inodeFromRemoteDentry(entry os.FileInfo) Inode {
 		Nlink: 1,
 		Mode:  entry.Mode(),
 		Mtime: entry.ModTime(),
+
+		Uid: uint32(os.Geteuid()),
+		Gid: uint32(os.Getegid()),
 	}
 
 	remotePath := path.Join(dir.remotePath, entry.Name())
