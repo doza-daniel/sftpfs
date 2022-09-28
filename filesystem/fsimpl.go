@@ -134,15 +134,19 @@ func (fs *filesystem) ForgetInode(ctx context.Context, op *fuseops.ForgetInodeOp
 		return nil
 	}
 
-	fnode, ok := in.(inode.FileInode)
-	if !ok {
-		return nil
-	}
+	remotePath := in.RemotePath()
 
-	remotePath := fnode.RemotePath()
-	if err := fs.sftpClient.Remove(remotePath); err != nil {
-		log.Printf("failed to delete remote file '%s': %v", remotePath, err)
-		return fuse.EIO
+	switch in.(type) {
+	case inode.FileInode:
+		if err := fs.sftpClient.Remove(remotePath); err != nil {
+			log.Printf("failed to delete remote file '%s': %v", remotePath, err)
+			return fuse.EIO
+		}
+	case inode.DirInode:
+		if err := fs.sftpClient.RemoveDirectory(remotePath); err != nil {
+			log.Printf("failed to delete remote dir '%s': %v", remotePath, err)
+			return fuse.EIO
+		}
 	}
 
 	return nil
@@ -296,12 +300,42 @@ func (fs *filesystem) Rename(context.Context, *fuseops.RenameOp) error {
 	return fuse.ENOSYS
 }
 
-func (fs *filesystem) RmDir(context.Context, *fuseops.RmDirOp) error {
+func (fs *filesystem) RmDir(ctx context.Context, op *fuseops.RmDirOp) error {
 	fs.Lock()
 	defer fs.Unlock()
 
-	log.Println("RmDir")
-	return fuse.ENOSYS
+	log.Printf("RmDir[Parent: %v, Name: %v]", op.Parent, op.Name)
+
+	in, ok := fs.inodes[op.Parent]
+	if !ok {
+		return fuse.ENOENT
+	}
+
+	parent, ok := in.(inode.DirInode)
+	if !ok {
+		return fuse.EINVAL
+	}
+
+	child := parent.LookUpChild(ctx, op.Name)
+	if child == nil {
+		return fuse.ENOENT
+	}
+
+	dnode, ok := child.(inode.DirInode)
+	if !ok {
+		return fuse.ENOTDIR
+	}
+	entries, err := dnode.GetEntries(ctx)
+	if err != nil {
+		return fuse.EIO
+	}
+	if len(entries) > 0 {
+		return fuse.ENOTEMPTY
+	}
+
+	parent.RemoveEntry(op.Name)
+
+	return nil
 }
 
 func (fs *filesystem) Unlink(ctx context.Context, op *fuseops.UnlinkOp) error {
