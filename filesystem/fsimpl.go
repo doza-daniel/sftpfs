@@ -87,7 +87,6 @@ func (fs *filesystem) GetInodeAttributes(ctx context.Context, op *fuseops.GetIno
 	}
 
 	op.Attributes = *in.GetAttributes()
-	// op.AttributesExpiration = time.Now().Add(time.Second) // TODO: hardcoded for now
 
 	return nil
 }
@@ -129,7 +128,24 @@ func (fs *filesystem) ForgetInode(ctx context.Context, op *fuseops.ForgetInodeOp
 	defer fs.Unlock()
 
 	log.Printf("ForgetInode[InodeID: %v, N: %v]", op.Inode, op.N)
-	return nil // TODO: implement this
+
+	in, ok := fs.inodes[op.Inode]
+	if !ok {
+		return nil
+	}
+
+	fnode, ok := in.(inode.FileInode)
+	if !ok {
+		return nil
+	}
+
+	remotePath := fnode.RemotePath()
+	if err := fs.sftpClient.Remove(remotePath); err != nil {
+		log.Printf("failed to delete remote file '%s': %v", remotePath, err)
+		return fuse.EIO
+	}
+
+	return nil
 }
 
 func (fs *filesystem) BatchForget(context.Context, *fuseops.BatchForgetOp) error {
@@ -174,6 +190,11 @@ func (fs *filesystem) MkDir(ctx context.Context, op *fuseops.MkDirOp) error {
 	}
 
 	remotePath := path.Join(parent.RemotePath(), op.Name)
+
+	if err := fs.sftpClient.Mkdir(remotePath); err != nil {
+		return fuse.EIO
+	}
+
 	dnode := inode.NewDir(fs.nextInodeID(), &attrs, remotePath, fs.sftpClient)
 	fs.inodes[dnode.InodeID()] = dnode
 	parent.AddEntry(dnode.Name(), dnode)
@@ -227,16 +248,18 @@ func (fs *filesystem) CreateFile(ctx context.Context, op *fuseops.CreateFileOp) 
 		Crtime: time.Now(),
 	}
 
-	fnode := inode.NewFile(fs.nextInodeID(), &attrs, op.Name)
-	fs.inodes[fnode.InodeID()] = fnode
+	remotePath := path.Join(parent.RemotePath(), op.Name)
 
-	parent.AddEntry(fnode.Name(), fnode)
+	fnode := inode.NewFile(fs.nextInodeID(), &attrs, remotePath)
 
-	f, err := fs.sftpClient.Open("/home/mi13119/" + fnode.Name())
+	f, err := fs.sftpClient.OpenFile(fnode.RemotePath(), os.O_CREATE|os.O_RDWR)
 	if err != nil {
 		log.Printf("failed to open remote file: %v", err)
 		return fuse.EIO
 	}
+
+	parent.AddEntry(fnode.Name(), fnode)
+	fs.inodes[fnode.InodeID()] = fnode
 
 	op.Handle = fs.nextHandleID()
 	fs.handles[op.Handle] = handle.NewFileHandle(fnode.(inode.FileInode), f)
