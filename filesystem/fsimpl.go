@@ -292,11 +292,42 @@ func (fs *filesystem) CreateSymlink(context.Context, *fuseops.CreateSymlinkOp) e
 	return fuse.ENOSYS
 }
 
-func (fs *filesystem) Rename(context.Context, *fuseops.RenameOp) error {
+func (fs *filesystem) Rename(ctx context.Context, op *fuseops.RenameOp) error {
 	fs.Lock()
 	defer fs.Unlock()
 
-	log.Println("Rename")
+	log.Printf(
+		"Rename[OldParent: %v, OldName: %v -> NewParent: %v, NewName: %v]",
+		op.OldParent, op.OldName, op.NewParent, op.NewName,
+	)
+
+	in, ok := fs.inodes[op.OldParent]
+	if !ok {
+		return fuse.ENOENT
+	}
+
+	oldParent, ok := in.(inode.DirInode)
+	if !ok {
+		return fuse.EINVAL
+	}
+
+	in, ok = fs.inodes[op.OldParent]
+	if !ok {
+		return fuse.ENOENT
+	}
+
+	newParent, ok := in.(inode.DirInode)
+	if !ok {
+		return fuse.EINVAL
+	}
+
+	toMoveNode := oldParent.LookUpChild(ctx, op.OldName)
+	if toMoveNode == nil {
+		return fuse.ENOENT
+	}
+
+	_ = newParent
+
 	return fuse.ENOSYS
 }
 
