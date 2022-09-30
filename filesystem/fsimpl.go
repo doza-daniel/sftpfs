@@ -472,6 +472,8 @@ func (fs *filesystem) OpenFile(ctx context.Context, op *fuseops.OpenFileOp) erro
 	fs.Lock()
 	defer fs.Unlock()
 
+	op.Handle = fs.nextHandleID()
+
 	log.Printf("OpenFile[Inode: %v, Handle: %v]", op.Inode, op.Handle)
 	in, ok := fs.inodes[op.Inode]
 	if !ok {
@@ -490,7 +492,6 @@ func (fs *filesystem) OpenFile(ctx context.Context, op *fuseops.OpenFileOp) erro
 		return fuse.EIO
 	}
 
-	op.Handle = fs.nextHandleID()
 	fs.handles[op.Handle] = handle.NewFileHandle(fnode, f)
 
 	return nil
