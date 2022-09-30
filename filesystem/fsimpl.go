@@ -106,6 +106,16 @@ func (fs *filesystem) SetInodeAttributes(ctx context.Context, op *fuseops.SetIno
 	attrs := in.GetAttributes()
 
 	if op.Size != nil {
+		f, err := fs.sftpClient.OpenFile(in.RemotePath(), os.O_RDWR)
+		if err != nil {
+			log.Printf("Failed to open remote file: %v", err)
+			return fuse.EIO
+		}
+		if err := f.Truncate(int64(*op.Size)); err != nil {
+			log.Printf("Failed to truncate remote file: %v", err)
+			return fuse.EIO
+		}
+
 		attrs.Size = *op.Size
 	}
 	if op.Mode != nil {
@@ -496,7 +506,7 @@ func (fs *filesystem) OpenFile(ctx context.Context, op *fuseops.OpenFileOp) erro
 	}
 
 	remotePath := fnode.RemotePath()
-	f, err := fs.sftpClient.OpenFile(remotePath, os.O_RDWR)
+	f, err := fs.sftpClient.OpenFile(remotePath, int(op.OpenFlags))
 	if err != nil {
 		log.Printf("failed to open remote file '%v': %v", remotePath, err)
 		return fuse.EIO
