@@ -51,6 +51,10 @@ func (f *fileInode) RemotePath() string {
 	return f.remotePath
 }
 
+func (f *fileInode) SetRemotePath(s string) {
+	f.remotePath = s
+}
+
 func (f *fileInode) ReadAt(p []byte, off int64) (int, error) {
 	// TODO fix this generated stuff
 	if true {

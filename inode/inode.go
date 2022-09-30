@@ -9,5 +9,6 @@ type Inode interface {
 	SetInodeID(fuseops.InodeID)
 	Name() string
 	RemotePath() string
+	SetRemotePath(string)
 	GetAttributes() *fuseops.InodeAttributes
 }

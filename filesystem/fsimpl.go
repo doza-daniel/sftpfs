@@ -87,6 +87,7 @@ func (fs *filesystem) GetInodeAttributes(ctx context.Context, op *fuseops.GetIno
 	}
 
 	op.Attributes = *in.GetAttributes()
+	op.AttributesExpiration = time.Now().Add(time.Minute * 3)
 
 	return nil
 }
@@ -311,7 +312,7 @@ func (fs *filesystem) Rename(ctx context.Context, op *fuseops.RenameOp) error {
 		return fuse.EINVAL
 	}
 
-	in, ok = fs.inodes[op.OldParent]
+	in, ok = fs.inodes[op.NewParent]
 	if !ok {
 		return fuse.ENOENT
 	}
@@ -326,9 +327,18 @@ func (fs *filesystem) Rename(ctx context.Context, op *fuseops.RenameOp) error {
 		return fuse.ENOENT
 	}
 
-	_ = newParent
+	oldPath := toMoveNode.RemotePath()
+	newPath := path.Join(newParent.RemotePath(), op.NewName)
+	if err := fs.sftpClient.Rename(oldPath, newPath); err != nil {
+		log.Printf("failed to move remote file '%s' to '%s'", oldPath, newPath)
+		return fuse.EIO
+	}
 
-	return fuse.ENOSYS
+	toMoveNode.SetRemotePath(newPath)
+	newParent.AddEntry(op.NewName, toMoveNode)
+	oldParent.RemoveEntry(op.OldName)
+
+	return nil
 }
 
 func (fs *filesystem) RmDir(ctx context.Context, op *fuseops.RmDirOp) error {

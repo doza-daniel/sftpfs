@@ -67,6 +67,10 @@ func (dir *dirInode) RemotePath() string {
 	return dir.remotePath
 }
 
+func (dir *dirInode) SetRemotePath(s string) {
+	dir.remotePath = s
+}
+
 func (dir *dirInode) AddEntry(name string, in Inode) {
 	dir.entries[name] = in
 }
